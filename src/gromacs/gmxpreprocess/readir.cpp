@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
- * Copyright (c) 2013,2014,2015,2016,2017, by the GROMACS development team, led by
+ * Copyright (c) 2013,2014,2015,2016,2017,2018, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -93,6 +93,7 @@ typedef struct t_inputrec_strings
     char   lambda_weights[STRLEN];
     char **pull_grp;
     char **rot_grp;
+    char **cond_grp;
     char   anneal[STRLEN], anneal_npoints[STRLEN],
            anneal_time[STRLEN], anneal_temp[STRLEN];
     char   QMmethod[STRLEN], QMbasis[STRLEN], QMcharge[STRLEN], QMmult[STRLEN],
@@ -2086,6 +2087,15 @@ void get_ir(const char *mdparin, const char *mdparout,
     STYPE ("wall-density",  is->wall_density,  NULL);
     RTYPE ("wall-ewald-zfac", ir->wall_ewald_zfac, 3);
 
+    /* Conditional stop */
+    CCTYPE ("CONDITIONAL STOP");
+    EETYPE("conditional-stop", ir->bConditionalStop, yesno_names);
+    if (ir->bConditionalStop)
+    {
+        snew(ir->condstop, 1);
+        is->cond_grp = read_condstopparams(&ninp, &inp, ir->condstop, wi);
+    }
+
     /* COM pulling */
     CCTYPE("COM PULLING");
     EETYPE("pull",          ir->bPull, yesno_names);
@@ -3534,6 +3544,11 @@ void do_index(const char* mdparin, const char *ndx,
                 }
             }
         }
+    }
+
+    if (ir->bConditionalStop)
+    {
+        make_condstop_groups(ir->condstop, is->cond_grp, grps, gnames);
     }
 
     if (ir->bPull)

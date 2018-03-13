@@ -1520,6 +1520,103 @@ Walls
    ``=3dc``. The empty layer in the box serves to decrease the
    unphysical Coulomb interaction between periodic images.
 
+Conditional stop
+^^^^^^^^^^^^^^^^
+
+.. mdp:: conditional-stop
+
+   .. mdp-value:: no
+
+      No conditional stop. All the following pull options will
+      be ignored (and if present in the :ref:`mdp` file, they unfortunately
+      generate warnings).
+
+   .. mdp-value:: yes
+
+       Conditional stop will happen when one or more conditions are
+       satisfied.
+
+.. mdp:: conditional-stop-nsteps
+
+   (1000)
+   frequency for checking if conditions are satisfied
+
+.. mdp:: conditional-stop-ngroups
+
+   (1)
+   The number of groups, not including the absolute reference
+   group, when used. Groups can be reused in multiple conditions.
+   Below only the options for group 1 are given,
+   further groups simply increase the group index number.
+
+.. mdp:: conditional-stop-nconds
+
+   (1)
+   The number of conditions. Below only the options for
+   condition 1 are given, further coordinates simply increase the
+   condition index number.
+
+.. mdp:: conditional-stop-group1-name
+
+   The name of the group, is looked up in the index file or in
+   the default groups to obtain the atoms involved.
+
+.. mdp:: conditional-stop-cond1-ngroups
+
+   (2)
+   Number of groups in the condition.
+
+.. mdp:: conditional-stop-cond1-groups
+
+   The group indices on which this condition will operate.
+   The number of group indices required is geometry dependent. // FIXME
+   The first index can be 0, in which case an // FIXME
+   absolute reference of :mdp:`pull-coord1-origin` is used. With an
+   absolute reference the system is no longer translation invariant
+   and one should think about what to do with the center of mass
+   motion.
+
+.. mdp:: conditional-stop-cond1-type
+
+   .. mdp-value:: minimal
+
+      Minimal distance between the atoms in the groups.
+
+   .. mdp-value:: maximal
+
+      Maximal distance between the atoms in the groups
+
+   .. mdp-value:: COC
+
+      Distance between the centers of coordinates.
+
+.. mdp:: conditional-stop-cond1-distance-criterion
+
+   .. mdp-value:: smaller
+
+      Check if the calculated distance is smaller than the
+      :mdp:`conditional-stop-cond1-distance`.
+
+   .. mdp-value:: greater
+
+      Check if the calculated distance is greater than the
+      :mdp:`conditional-stop-cond1-distance`.
+
+.. mdp:: conditional-stop-cond1-distance
+
+   (0.0)
+   The distance threshold.
+
+.. mdp:: conditional-stop-cond1-origin
+
+   .. mdp-value:: no
+
+      do not modify :mdp:`pull-coord1-init` // FIXME
+
+   .. mdp-value:: yes
+
+      add the COM distance of the starting conformation to
+      :mdp:`pull-coord1-init` // FIXME
 
 COM pulling
 ^^^^^^^^^^^

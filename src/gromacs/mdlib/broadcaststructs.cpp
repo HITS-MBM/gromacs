@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
- * Copyright (c) 2013,2014,2015,2016, by the GROMACS development team, led by
+ * Copyright (c) 2013,2014,2015,2016,2018, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -505,6 +505,23 @@ static void bc_cosines(const t_commrec *cr, t_cosines *cs)
     }
 }
 
+static void bc_condstop(const t_commrec *cr, t_condstop *condstop)
+{
+    block_bc(cr, *condstop);
+    snew_bc(cr, condstop->condgrp, condstop->ngrp);
+    for (int g = 0; g < condstop->ngrp; g++)
+    {
+        block_bc(cr, condstop->condgrp[g]);
+        snew_bc(cr, condstop->condgrp[g].ind, condstop->condgrp[g].nat);
+        nblock_bc(cr, condstop->condgrp[g].nat, condstop->condgrp[g].ind);
+    }
+    snew_bc(cr, condstop->cond, condstop->ncond);
+    for (int c = 0; c < condstop->ncond; c++)
+    {
+        block_bc(cr, condstop->cond[c]);
+    }
+}
+
 static void bc_pull_group(const t_commrec *cr, t_pull_group *pgrp)
 {
     block_bc(cr, *pgrp);
@@ -711,6 +728,11 @@ static void bc_inputrec(const t_commrec *cr, t_inputrec *inputrec)
     if (inputrec->bSimTemp)
     {
         bc_simtempvals(cr, inputrec->simtempvals, inputrec->fepvals->n_lambda);
+    }
+    if (inputrec->bConditionalStop)
+    {
+        snew_bc(cr, inputrec->condstop, 1);
+        bc_condstop(cr, inputrec->condstop);
     }
     if (inputrec->bPull)
     {

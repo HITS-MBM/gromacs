@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
- * Copyright (c) 2013,2014,2015, by the GROMACS development team, led by
+ * Copyright (c) 2013,2014,2015,2018, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -247,6 +247,33 @@ typedef struct t_swapcoords {
                                             * swapcoords.cpp                               */
 } t_swapcoords;
 
+typedef struct {
+    int             nat;                   /* Number of atoms             */
+    int            *ind;                   /* The global atoms numbers    */
+} t_condgrp;
+
+typedef struct t_stopcond {
+    int             ngrp;                  /* Number of groups (must be 2)        */
+    int             grp[2];                /* The conditional stop group indices  */
+    int             eType;                 /* Type of the conditional stop        */
+    int             eDistCr;               /* Distance criterion                  */
+    real            distance;              /* Distance threshold                  */
+    gmx_bool        bOrigin;               /* Store origin coordinates of group 1 */
+    int             nx;                    /* Stored number of atom coordinates   */
+    rvec           *x;                     /* Stored coordinates of the atoms     */
+    rvec            coc;                   /* Stored center of coordinates        */
+} t_stopcond;
+
+typedef struct t_condstop {
+    int              nsteps;                /* Number of steps between conditional stop checks               */
+    int              ngrp;                  /* Number of conditional groups                                  */
+    t_condgrp       *condgrp;               /* Groups to use for conditional stopping                        */
+    int              ncond;                 /* Number of conditions                                          */
+    t_stopcond      *cond;                  /* Conditions to use for conditional stopping                    */
+    int              nxidx;                 /* Total number of state->x indices                              */
+    int             *xidx;                  /* Sorted unique indices in state->x of all atoms in all groups  */
+} t_condstop;
+
 typedef struct t_inputrec {
     int             eI;                      /* Integration method                 */
     gmx_int64_t     nsteps;                  /* number of steps to be taken			*/
@@ -394,6 +421,10 @@ typedef struct t_inputrec {
     int             QMconstraints; /* constraints on QM bonds                      */
     int             QMMMscheme;    /* Scheme: ONIOM or normal                      */
     real            scalefactor;   /* factor for scaling the MM charges in QM calc.*/
+
+    /* Conditional stop */
+    gmx_bool        bConditionalStop;        /* Conditional stop on/off */
+    t_condstop     *condstop;                /* Data for conditional stop */
 
     /* Fields for removed features go here (better caching) */
     gmx_bool        bAdress;       // Whether AdResS is enabled - always false if a valid .tpr was read

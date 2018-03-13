@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2010, The GROMACS development team.
- * Copyright (c) 2012,2014,2015,2016, by the GROMACS development team, led by
+ * Copyright (c) 2012,2014,2015,2016,2018, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -941,6 +941,35 @@ void pr_inputrec(FILE *fp, int indent, const char *title, const t_inputrec *ir,
         PI("lincs-iter", ir->nLincsIter);
         PR("lincs-warnangle", ir->LincsWarnAngle);
 
+        /* CONDITIONAL STOP */
+        PS("conditional-stop", EBOOL(ir->bConditionalStop));
+        if (ir->bConditionalStop)
+        {
+            PI("conditional-stop-nsteps", ir->condstop->nsteps);
+            PI("conditional-stop-ngroups", ir->condstop->ngrp);
+            for (int g = 0; g < ir->condstop->ngrp; g++)
+            {
+                pr_indent(fp, indent);
+                fprintf(fp, "conditional-stop-group %d:\n", g);
+                indent += 2;
+                pr_ivec_block(fp, indent, "atom", ir->condstop->condgrp[g].ind,
+                              ir->condstop->condgrp[g].nat, TRUE);
+            }
+            PI("conditional-stop-nconds", ir->condstop->ncond);
+            for (int c = 0; c < ir->condstop->ncond; c++)
+            {
+                pr_indent(fp, indent);
+                fprintf(fp, "conditional-stop-cond %d:\n", c);
+                indent += 2;
+                pr_ivec_block(fp, indent, "group", ir->condstop->cond[c].grp,
+                              ir->condstop->cond[c].ngrp, TRUE);
+                PS("type", ECONDSTOPTYPE(ir->condstop->cond[c].eType));
+                PS("distance-criterion", ECONDSTOPDISTCR(ir->condstop->cond[c].eDistCr));
+                PR("distance", ir->condstop->cond[c].distance);
+                PS("origin", EBOOL(ir->condstop->cond[c].bOrigin));
+            }
+        }
+
         /* Walls */
         PI("nwall", ir->nwall);
         PS("wall-type", EWALLTYPE(ir->wall_type));
@@ -952,6 +981,35 @@ void pr_inputrec(FILE *fp, int indent, const char *title, const t_inputrec *ir,
         PR("wall-density[0]", ir->wall_density[0]);
         PR("wall-density[1]", ir->wall_density[1]);
         PR("wall-ewald-zfac", ir->wall_ewald_zfac);
+
+        /* CONDITIONAL STOP */
+        PS("conditional-stop", EBOOL(ir->bConditionalStop));
+        if (ir->bConditionalStop)
+        {
+            PI("conditional-stop-nsteps", ir->condstop->nsteps);
+            PI("conditional-stop-ngroups", ir->condstop->ngrp);
+            for (int g = 0; g < ir->condstop->ngrp; g++)
+            {
+                pr_indent(fp, indent);
+                fprintf(fp, "conditional-stop-group %d:\n", g);
+                indent += 2;
+                pr_ivec_block(fp, indent, "atom", ir->condstop->condgrp[g].ind,
+                              ir->condstop->condgrp[g].nat, TRUE);
+            }
+            PI("conditional-stop-nconds", ir->condstop->ncond);
+            for (int c = 0; c < ir->condstop->ncond; c++)
+            {
+                pr_indent(fp, indent);
+                fprintf(fp, "conditional-stop-cond %d:\n", c);
+                indent += 2;
+                pr_ivec_block(fp, indent, "group", ir->condstop->cond[c].grp,
+                              ir->condstop->cond[c].ngrp, TRUE);
+                PS("type", ECONDSTOPTYPE(ir->condstop->cond[c].eType));
+                PS("distance-criterion", ECONDSTOPDISTCR(ir->condstop->cond[c].eDistCr));
+                PR("distance", ir->condstop->cond[c].distance);
+                PS("origin", EBOOL(ir->condstop->cond[c].bOrigin));
+            }
+        }
 
         /* COM PULLING */
         PS("pull", EBOOL(ir->bPull));

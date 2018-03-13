@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
- * Copyright (c) 2013,2014,2015,2016, by the GROMACS development team, led by
+ * Copyright (c) 2013,2014,2015,2016,2018, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -44,6 +44,7 @@
 struct gmx_groups_t;
 struct gmx_mtop_t;
 struct gmx_output_env_t;
+struct t_condstop;
 struct pull_params_t;
 struct pull_t;
 struct t_grpopts;
@@ -124,6 +125,17 @@ void do_index(const char* mdparin,
               warninp_t   wi);
 /* Read the index file and assign grp numbers to atoms.
  */
+
+/* Routines In readcond.cpp */
+
+char **read_condstopparams(int *ninp_p, t_inpfile **inp_p, t_condstop *condstop,
+                           warninp_t wi);
+/* Reads conditional stop parameters, returns a list of the conditional stop
+ * group names. */
+
+void make_condstop_groups(t_condstop *condstop, char **cgnames,
+                          const t_blocka *grps, char **gnames);
+/* Process the conditional stop group parameters after reading the index groups */
 
 /* Routines In readpull.c */
 

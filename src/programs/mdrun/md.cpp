@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
- * Copyright (c) 2011,2012,2013,2014,2015,2016,2017, by the GROMACS development team, led by
+ * Copyright (c) 2011,2012,2013,2014,2015,2016,2017,2018, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -55,6 +55,7 @@
 #include "gromacs/ewald/pme.h"
 #include "gromacs/ewald/pme-load-balancing.h"
 #include "gromacs/fileio/trxio.h"
+#include "gromacs/gmxlib/conditional-stop.h"
 #include "gromacs/gmxlib/md_logging.h"
 #include "gromacs/gmxlib/network.h"
 #include "gromacs/gmxlib/nrnb.h"
@@ -750,6 +751,20 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
         }
     }
 
+    /* Conditional stop initialization */
+    if (ir->bConditionalStop)
+    {
+        /* store indices which will be broadcasted in each step and
+         * broadcast state subset (atom coordinates) used by conditional stop */
+        if (DOMAINDECOMP(cr))
+        {
+            store_condgrp_stateidx(ir->condstop);
+            bcast_condgrp_statex(cr, ir->condstop, state_global);
+        }
+        /* store initial coordinates for conditions which require them */
+        store_coord_as_origin(fplog, cr, ir->condstop, state_global, state);
+    }
+
     /* loop over MD steps or if rerunMD to end of input trajectory */
     bFirstStep = TRUE;
     /* Skip the first Nose-Hoover integration when we get the state from tpx */
@@ -1255,6 +1270,32 @@ double gmx::do_md(FILE *fplog, t_commrec *cr, int nfile, const t_filenm fnm[],
             if (ir->efep != efepNO && !bRerunMD)
             {
                 sum_dhdl(enerd, state->lambda, ir->fepvals);
+            }
+        }
+
+        /* Conditional stop check */
+        if (ir->bConditionalStop && (step - ir->init_step) % ir->condstop->nsteps == 0)
+        {
+            /* broadcast state subset (atom coordinates) used by conditional stop */
+            if (DOMAINDECOMP(cr))
+            {
+                bcast_condgrp_statex(cr, ir->condstop, state_global);
+            }
+
+            /* check stop conditions in every step but the initial, store coordinates in the initial step */
+            if (step - ir->init_step > 0)
+            {
+                gmx_bool bDoConditionalStop;
+                bDoConditionalStop = check_stop_conditions(fplog, cr, ir->condstop, state_global, state);
+                if (MASTER(cr) && bDoConditionalStop)
+                {
+                    if (fplog)
+                    {
+                        fprintf(fplog, "\nConditional stop requested at step %ld time %f\n\n", step, t);
+                    }
+                    fprintf(stderr, "\nConditional stop requested at step %ld time %f\n", step, t);
+                }
+                bLastStep = bLastStep || bDoConditionalStop;
             }
         }
 

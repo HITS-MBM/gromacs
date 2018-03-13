@@ -3,7 +3,7 @@
  *
  * Copyright (c) 1991-2000, University of Groningen, The Netherlands.
  * Copyright (c) 2001-2004, The GROMACS development team.
- * Copyright (c) 2013,2014,2015,2016, by the GROMACS development team, led by
+ * Copyright (c) 2013,2014,2015,2016,2018, by the GROMACS development team, led by
  * Mark Abraham, David van der Spoel, Berk Hess, and Erik Lindahl,
  * and including many others, as listed in the AUTHORS file in the
  * top-level source directory and at http://www.gromacs.org.
@@ -111,6 +111,7 @@ enum tpxv {
     tpxv_RemoveTwinRange,                                    /**< removed support for twin-range interactions */
     tpxv_ReplacePullPrintCOM12,                              /**< Replaced print-com-1, 2 with pull-print-com */
     tpxv_PullExternalPotential,                              /**< Added pull type external potential */
+    tpvx_ConditionalStop,                                    /**< Added conditional stop */
     tpxv_Count                                               /**< the total number of tpxv versions */
 };
 
@@ -1648,6 +1649,47 @@ static void do_inputrec(t_fileio *fio, t_inputrec *ir, gmx_bool bRead,
     gmx_fio_do_real(fio, ir->userreal2);
     gmx_fio_do_real(fio, ir->userreal3);
     gmx_fio_do_real(fio, ir->userreal4);
+
+    if (file_version >= tpvx_ConditionalStop)
+    {
+        gmx_fio_do_gmx_bool(fio, ir->bConditionalStop);
+        if (ir->bConditionalStop)
+        {
+            if (bRead)
+            {
+                snew(ir->condstop, 1);
+            }
+            gmx_fio_do_int(fio, ir->condstop->nsteps);
+            gmx_fio_do_int(fio, ir->condstop->ngrp);
+            if (bRead)
+            {
+                snew(ir->condstop->condgrp, ir->condstop->ngrp);
+            }
+            for (int g = 0; g < ir->condstop->ngrp; g++)
+            {
+                gmx_fio_do_int(fio, ir->condstop->condgrp[g].nat);
+                if (bRead)
+                {
+                    snew(ir->condstop->condgrp[g].ind, ir->condstop->condgrp[g].nat);
+                }
+                gmx_fio_ndo_int(fio, ir->condstop->condgrp[g].ind, ir->condstop->condgrp[g].nat);
+            }
+            gmx_fio_do_int(fio, ir->condstop->ncond);
+            if (bRead)
+            {
+                snew(ir->condstop->cond, ir->condstop->ncond);
+            }
+            for (int c = 0; c < ir->condstop->ncond; c++)
+            {
+                gmx_fio_do_int(fio, ir->condstop->cond[c].ngrp);
+                gmx_fio_ndo_int(fio, ir->condstop->cond[c].grp, ir->condstop->cond[c].ngrp);
+                gmx_fio_do_int(fio, ir->condstop->cond[c].eType);
+                gmx_fio_do_int(fio, ir->condstop->cond[c].eDistCr);
+                gmx_fio_do_real(fio, ir->condstop->cond[c].distance);
+                gmx_fio_do_gmx_bool(fio, ir->condstop->cond[c].bOrigin);
+            }
+        }
+    }
 
     /* AdResS is removed, but we need to be able to read old files,
        and let mdrun refuse to run them */
