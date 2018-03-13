@@ -55,6 +55,7 @@
 #include "gromacs/math/vectypes.h"
 #include "gromacs/mdtypes/pull-params.h"
 #include "gromacs/pulling/pull_internal.h"
+#include "gromacs/timing/wallcycle.h"
 #include "gromacs/utility/basedefinitions.h"
 #include "gromacs/utility/real.h"
 
@@ -181,12 +182,14 @@ void clear_pull_forces(struct pull_t *pull);
  * \param[in]     x      Positions.
  * \param[in,out] force  Forces and virial.
  * \param[out] dvdlambda Pull contribution to dV/d(lambda).
+ * \param[in, out] wcycle Wallcycle.
  *
  * \returns The pull potential energy.
  */
 real pull_potential(struct pull_t *pull, t_mdatoms *md, struct t_pbc *pbc,
                     t_commrec *cr, double t, real lambda,
-                    rvec *x, gmx::ForceWithVirial *force, real *dvdlambda);
+                    rvec *x, gmx::ForceWithVirial *force, real *dvdlambda,
+                    gmx_wallcycle_t wcycle);
 
 
 /*! \brief Constrain the coordinates xp in the directions in x
@@ -280,6 +283,16 @@ void pull_calc_coms(t_commrec        *cr,
                     double            t,
                     rvec              x[],
                     rvec             *xp);
+
+
+/*! \brief Update list of atom indices located in the defined slice.
+ *
+ * \param[in] cr       Struct for communication info.
+ * \param[in] pull     The pull data structure.
+ * \param[in] x        The local positions.
+ *
+ */
+void update_sliced_pull_groups(t_commrec *cr, struct pull_t *pull, rvec x[]);
 
 
 /*! \brief Returns if we have pull coordinates with potential pulling.
