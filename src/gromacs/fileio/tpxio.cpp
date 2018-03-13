@@ -111,6 +111,7 @@ enum tpxv {
     tpxv_RemoveTwinRange,                                    /**< removed support for twin-range interactions */
     tpxv_ReplacePullPrintCOM12,                              /**< Replaced print-com-1, 2 with pull-print-com */
     tpxv_PullExternalPotential,                              /**< Added pull type external potential */
+    tpxv_SlicedPullGroups,                                   /**< Added sliced pull group */
     tpxv_Count                                               /**< the total number of tpxv versions */
 };
 
@@ -264,7 +265,7 @@ static void do_pullgrp_tpx_pre95(t_fileio     *fio,
     }
 }
 
-static void do_pull_group(t_fileio *fio, t_pull_group *pgrp, gmx_bool bRead)
+static void do_pull_group(t_fileio *fio, t_pull_group *pgrp, gmx_bool bRead, int file_version)
 {
     gmx_fio_do_int(fio, pgrp->nat);
     if (bRead)
@@ -279,6 +280,16 @@ static void do_pull_group(t_fileio *fio, t_pull_group *pgrp, gmx_bool bRead)
     }
     gmx_fio_ndo_real(fio, pgrp->weight, pgrp->nweight);
     gmx_fio_do_int(fio, pgrp->pbcatom);
+    if (file_version >= tpxv_SlicedPullGroups)
+    {
+        gmx_fio_do_gmx_bool(fio, pgrp->bSliced);
+        if (pgrp->bSliced)
+        {
+            gmx_fio_do_gmx_bool(fio, pgrp->bSliceSmooth);
+            gmx_fio_do_real(fio, pgrp->slice_x_min);
+            gmx_fio_do_real(fio, pgrp->slice_x_max);
+        }
+    }
 }
 
 static void do_pull_coord(t_fileio *fio, t_pull_coord *pcrd,
@@ -766,7 +777,7 @@ static void do_pull(t_fileio *fio, pull_params_t *pull, gmx_bool bRead,
     {
         for (g = 0; g < pull->ngroup; g++)
         {
-            do_pull_group(fio, &pull->group[g], bRead);
+            do_pull_group(fio, &pull->group[g], bRead, file_version);
         }
         for (g = 0; g < pull->ncoord; g++)
         {
